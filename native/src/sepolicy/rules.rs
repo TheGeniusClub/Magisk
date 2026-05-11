@@ -1,5 +1,5 @@
 use crate::SePolicy;
-use crate::consts::{SEPOL_FILE_TYPE, SEPOL_LOG_TYPE, get_sepol_proc_domain};
+use crate::consts::{get_sepol_file_type, get_sepol_log_type, get_sepol_proc_domain};
 use crate::ffi::Xperm;
 use base::{LogLevel, set_log_level_state};
 
@@ -17,19 +17,19 @@ macro_rules! rules {
         vec![get_sepol_proc_domain()]
     };
     (@args [file]) => {
-        vec![SEPOL_FILE_TYPE]
+        vec![get_sepol_file_type()]
     };
     (@args [log]) => {
-        vec![SEPOL_LOG_TYPE]
+        vec![get_sepol_log_type()]
     };
     (@args proc) => {
         get_sepol_proc_domain()
     };
     (@args file) => {
-        SEPOL_FILE_TYPE
+        get_sepol_file_type()
     };
     (@args log) => {
-        SEPOL_LOG_TYPE
+        get_sepol_log_type()
     };
     (@args [$($arg:tt)*]) => {
         vec![$($arg)*]
@@ -118,7 +118,7 @@ impl SePolicy {
             allow(["kernel"], all, ["file"], ["relabelto"]);
             allow(["kernel"], ["tmpfs"], ["file"], ["relabelfrom"]);
 
-            // Let init transit to SEPOL_PROC_DOMAIN
+            // Let init transit to randomized proc domain
             allow(["kernel"], ["kernel"], ["process"], ["setcurrent"]);
             allow(["kernel"], [proc], ["process"], ["dyntransition"]);
 

@@ -1,4 +1,4 @@
-use crate::consts::generate_and_save_domain;
+use crate::consts::{generate_and_save_domain, generate_and_save_filetype, generate_and_save_logtype};
 use crate::ffi::{BootConfig, MagiskInit, backup_init, magisk_proxy_main};
 use crate::logging::setup_klog;
 use crate::mount::is_rootfs;
@@ -35,6 +35,8 @@ impl MagiskInit {
         info!("First Stage Init");
         self.prepare_data();
         generate_and_save_domain();
+        generate_and_save_filetype();
+        generate_and_save_logtype();
 
         if !cstr!("/sdcard").exists() && !cstr!("/first_stage_ramdisk/sdcard").exists() {
             self.hijack_init_with_switch_root();
@@ -67,9 +69,13 @@ impl MagiskInit {
                 .create_symlink_to(cstr!("/system/bin/init"))
                 .log_ok();
             generate_and_save_domain();
+        generate_and_save_filetype();
+        generate_and_save_logtype();
             self.patch_rw_root();
         } else {
             generate_and_save_domain();
+        generate_and_save_filetype();
+        generate_and_save_logtype();
             self.patch_ro_root();
         }
     }
@@ -78,6 +84,8 @@ impl MagiskInit {
         info!("Legacy SAR Init");
         self.prepare_data();
         generate_and_save_domain();
+        generate_and_save_filetype();
+        generate_and_save_logtype();
         let is_two_stage = self.mount_system_root();
         if is_two_stage {
             hexpatch_init_for_second_stage(false);
@@ -91,6 +99,8 @@ impl MagiskInit {
         self.prepare_data();
         self.restore_ramdisk_init();
         generate_and_save_domain();
+        generate_and_save_filetype();
+        generate_and_save_logtype();
         self.patch_rw_root();
     }
 

@@ -1,6 +1,6 @@
-use crate::consts::{DATABIN, LOG_PIPE, MAGISK_LOG_CON, MAGISKDB, MODULEROOT, SECURE_DIR};
+use crate::consts::{DATABIN, LOG_PIPE, MAGISKDB, MODULEROOT, SECURE_DIR, magisk_log_con};
 use crate::ffi::get_magisk_tmp;
-use base::{Directory, FsPathBuilder, LoggedResult, ResultExt, Utf8CStr, Utf8CStrBuf, cstr, libc};
+use base::{Directory, FsPathBuilder, LoggedResult, ResultExt, Utf8CStr, Utf8CStrBuf, Utf8CString, cstr, libc};
 use nix::fcntl::OFlag;
 use std::io::Write;
 
@@ -91,7 +91,9 @@ pub(crate) fn restore_tmpcon() -> LoggedResult<()> {
 
     path.clear();
     path.append_path(tmp).append_path(LOG_PIPE);
-    path.set_secontext(cstr!(MAGISK_LOG_CON))?;
+    let log_con = magisk_log_con();
+    let log_con_cstr = Utf8CString::from(log_con.as_str());
+    path.set_secontext(log_con_cstr.as_ref())?;
 
     Ok(())
 }

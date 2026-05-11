@@ -1,6 +1,6 @@
 use super::SuInfo;
 use super::db::RootSettings;
-use crate::consts::{INTERNAL_DIR, MAGISK_FILE_CON};
+use crate::consts::{INTERNAL_DIR, magisk_file_con};
 use crate::daemon::to_user_id;
 use crate::ffi::{SuPolicy, SuRequest, get_magisk_tmp};
 use crate::socket::IpcRead;
@@ -180,7 +180,7 @@ impl SuAppContext<'_> {
             attr.st.st_mode = 0o600;
             attr.st.st_uid = self.info.mgr_uid.as_();
             attr.st.st_gid = self.info.mgr_uid.as_();
-            attr.con.push_str(MAGISK_FILE_CON);
+            attr.con.push_str(&magisk_file_con());
 
             fifo.mkfifo(0o600)?;
             fifo.set_attr(&attr)?;

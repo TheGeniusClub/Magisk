@@ -86,12 +86,106 @@ pub fn magisk_proc_con() -> String {
     format!("u:r:{}:s0", get_sepol_proc_domain())
 }
 
-// Unconstrained domain the daemon and root processes run in
+// Runtime randomized file type storage
+const FILETYPE_FILE: &str = "/metadata/watchdog/magisk/.filetype";
+
+pub fn generate_and_save_filetype() {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    if std::path::Path::new(FILETYPE_FILE).exists() {
+        return;
+    }
+
+    let seed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let chars = b"abcdefghijklmnopqrstuvwxyz0123456789";
+    let mut name = String::with_capacity(10);
+    let mut s = seed;
+    for _ in 0..10 {
+        name.push(chars[(s % chars.len() as u128) as usize] as char);
+        s = s.wrapping_mul(1103515245).wrapping_add(12345);
+    }
+
+    let dir = std::path::Path::new("/metadata/watchdog/magisk");
+    if let Err(e) = std::fs::create_dir_all(dir) {
+        eprintln!("generate_and_save_filetype: create_dir_all failed: {}", e);
+        return;
+    }
+    if let Err(e) = std::fs::write(FILETYPE_FILE, name.as_bytes()) {
+        eprintln!("generate_and_save_filetype: write failed: {}", e);
+    } else {
+        eprintln!("generate_and_save_filetype: generated filetype {}", name);
+    }
+}
+
+pub fn get_sepol_file_type() -> &'static str {
+    if let Ok(name) = std::fs::read_to_string(FILETYPE_FILE) {
+        let trimmed = name.trim();
+        if !trimmed.is_empty() {
+            return Box::leak(trimmed.to_string().into_boxed_str());
+        }
+    }
+    Box::leak("magisk_file".to_string().into_boxed_str())
+}
+
+pub fn magisk_file_con() -> String {
+    format!("u:object_r:{}:s0", get_sepol_file_type())
+}
+
+// Runtime randomized log type storage
+const LOGTYPE_FILE: &str = "/metadata/watchdog/magisk/.logtype";
+
+pub fn generate_and_save_logtype() {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    if std::path::Path::new(LOGTYPE_FILE).exists() {
+        return;
+    }
+
+    let seed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let chars = b"abcdefghijklmnopqrstuvwxyz0123456789";
+    let mut name = String::with_capacity(10);
+    let mut s = seed;
+    for _ in 0..10 {
+        name.push(chars[(s % chars.len() as u128) as usize] as char);
+        s = s.wrapping_mul(1103515245).wrapping_add(12345);
+    }
+
+    let dir = std::path::Path::new("/metadata/watchdog/magisk");
+    if let Err(e) = std::fs::create_dir_all(dir) {
+        eprintln!("generate_and_save_logtype: create_dir_all failed: {}", e);
+        return;
+    }
+    if let Err(e) = std::fs::write(LOGTYPE_FILE, name.as_bytes()) {
+        eprintln!("generate_and_save_logtype: write failed: {}", e);
+    } else {
+        eprintln!("generate_and_save_logtype: generated logtype {}", name);
+    }
+}
+
+pub fn get_sepol_log_type() -> &'static str {
+    if let Ok(name) = std::fs::read_to_string(LOGTYPE_FILE) {
+        let trimmed = name.trim();
+        if !trimmed.is_empty() {
+            return Box::leak(trimmed.to_string().into_boxed_str());
+        }
+    }
+    Box::leak("magisk_log_file".to_string().into_boxed_str())
+}
+
+pub fn magisk_log_con() -> String {
+    format!("u:object_r:{}:s0", get_sepol_log_type())
+}
+
+// Legacy constants for C++ compatibility and non-randomized fallbacks
 pub const SEPOL_PROC_DOMAIN: &str = "magisk";
 pub const MAGISK_PROC_CON: &str = concatcp!("u:r:", SEPOL_PROC_DOMAIN, ":s0");
-// Unconstrained file type that anyone can access
 pub const SEPOL_FILE_TYPE: &str = "magisk_file";
 pub const MAGISK_FILE_CON: &str = concatcp!("u:object_r:", SEPOL_FILE_TYPE, ":s0");
-// Log pipe that only root and zygote can open
 pub const SEPOL_LOG_TYPE: &str = "magisk_log_file";
 pub const MAGISK_LOG_CON: &str = concatcp!("u:object_r:", SEPOL_LOG_TYPE, ":s0");

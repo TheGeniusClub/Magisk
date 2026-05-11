@@ -1,7 +1,7 @@
 use crate::bootstages::BootState;
 use crate::consts::{
-    MAGISK_FILE_CON, MAGISK_FULL_VER, MAGISK_VER_CODE, MAGISK_VERSION,
-    MAIN_CONFIG, MAIN_SOCKET, ROOTMNT, ROOTOVL, get_sepol_proc_domain,
+    MAGISK_FULL_VER, MAGISK_VER_CODE, MAGISK_VERSION,
+    MAIN_CONFIG, MAIN_SOCKET, ROOTMNT, ROOTOVL, get_sepol_proc_domain, magisk_file_con,
 };
 use crate::db::Sqlite3;
 use crate::ffi::{
@@ -19,7 +19,7 @@ use crate::zygisk::ZygiskState;
 use base::const_format::concatcp;
 use base::{
     AtomicArc, BufReadExt, FileAttr, FsPathBuilder, LoggedResult, ReadExt, ResultExt, Utf8CStr,
-    Utf8CStrBuf, WriteExt, cstr, fork_dont_care, info, libc, log_err, set_nice_name,
+    Utf8CStrBuf, Utf8CString, WriteExt, cstr, fork_dont_care, info, libc, log_err, set_nice_name,
 };
 use nix::fcntl::OFlag;
 use nix::mount::MsFlags;
@@ -416,7 +416,9 @@ fn daemon_entry() {
     };
 
     sock_path.follow_link().chmod(0o666).log_ok();
-    sock_path.set_secontext(cstr!(MAGISK_FILE_CON)).log_ok();
+    let file_con = magisk_file_con();
+    let file_con_cstr = Utf8CString::from(file_con.as_str());
+    sock_path.set_secontext(file_con_cstr.as_ref()).log_ok();
 
     // Loop forever to listen for requests
     let daemon = MagiskD::get();
