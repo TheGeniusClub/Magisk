@@ -69,6 +69,9 @@ class HomeViewModel(
                 CoreR.string.not_available.asText()
         }
 
+    val sepolDomain
+        get() = Info.sepolDomain.ifEmpty { "N/A" }
+
     @get:Bindable
     var managerRemoteVersion = CoreR.string.loading.asText()
         set(value) = set(value, field, { field = it }, BR.managerRemoteVersion)

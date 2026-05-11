@@ -15,6 +15,29 @@ static vector<string> rc_list;
 #define NEW_INITRC_DIR  "/system/etc/init/hw"
 #define INIT_RC         "init.rc"
 
+static void read_domain(char *buf, int len) {
+    int fd = open("/data/.backup/.domain", O_RDONLY);
+    if (fd < 0) {
+        buf[0] = 'm'; buf[1] = 'a'; buf[2] = 'g'; buf[3] = 'i';
+        buf[4] = 's'; buf[5] = 'k'; buf[6] = '\0';
+        return;
+    }
+    int n = read(fd, buf, len - 1);
+    close(fd);
+    if (n > 0) {
+        buf[n] = '\0';
+        for (int i = 0; i < n; i++) {
+            if (buf[i] == '\n') {
+                buf[i] = '\0';
+                break;
+            }
+        }
+    } else {
+        buf[0] = 'm'; buf[1] = 'a'; buf[2] = 'g'; buf[3] = 'i';
+        buf[4] = 's'; buf[5] = 'k'; buf[6] = '\0';
+    }
+}
+
 static bool unxz(int fd, rust::Slice<const uint8_t> bytes) {
     uint8_t out[8192];
     xz_crc32_init();
@@ -123,8 +146,10 @@ static bool patch_rc_scripts(const char *src_path, const char *tmp_path, bool wr
             if (line.sv().starts_with("service zygote ")) {
                 LOGD("Inject zygote restart\n");
                 fprintf(dest_rc.get(), "%s", line.c_str());
+                char domain[64];
+                read_domain(domain, sizeof(domain));
                 fprintf(dest_rc.get(),
-                        "    onrestart exec " MAGISK_PROC_CON " 0 0 -- %s/magisk --zygote-restart\n", tmp_path);
+                        "    onrestart exec u:r:%s:s0 0 0 -- %s/magisk --zygote-restart\n", domain, tmp_path);
                 return true;
             }
             fprintf(dest_rc.get(), "%s", line.c_str());

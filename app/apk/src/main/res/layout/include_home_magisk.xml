@@ -146,7 +146,7 @@
 
                         <LinearLayout
                             android:id="@+id/home_device_details_ramdisk"
-                            style="@style/W.Home.Item.Bottom"
+                            style="@style/W.Home.Item"
                             app:layout_constraintStart_toStartOf="@+id/home_magisk_installed_version"
                             app:layout_constraintTop_toBottomOf="@+id/home_device_details_zygisk">
 
@@ -158,6 +158,22 @@
                                 style="@style/W.Home.ItemContent.Right"
                                 android:text="@{Info.ramdisk ? @string/yes : @string/no }"
                                 tools:text="Yes" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            style="@style/W.Home.Item.Bottom"
+                            app:layout_constraintStart_toStartOf="@+id/home_magisk_installed_version"
+                            app:layout_constraintTop_toBottomOf="@+id/home_device_details_ramdisk">
+
+                            <TextView
+                                style="@style/W.Home.ItemContent"
+                                android:text="SEPolicy Domain" />
+
+                            <TextView
+                                style="@style/W.Home.ItemContent.Right"
+                                android:text="@{viewModel.sepolDomain}"
+                                tools:text="a3k9m2p7" />
 
                         </LinearLayout>
 

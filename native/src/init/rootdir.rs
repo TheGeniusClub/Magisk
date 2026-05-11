@@ -1,4 +1,4 @@
-use crate::consts::{ROOTMNT, ROOTOVL};
+use crate::consts::{ROOTMNT, ROOTOVL, get_sepol_proc_domain};
 use crate::ffi::MagiskInit;
 use base::nix::fcntl::OFlag;
 use base::{
@@ -15,6 +15,8 @@ pub fn inject_magisk_rc(fd: RawFd, tmp_dir: &Utf8CStr) {
 
     let mut file = unsafe { File::from_raw_fd(fd) };
 
+    let domain = get_sepol_proc_domain();
+    let con = format!("u:r:{}:s0", domain);
     write!(
         file,
         r#"
@@ -30,7 +32,7 @@ on nonencrypted
 on property:sys.boot_completed=1
     exec {0} 0 0 -- {1}/magisk --boot-complete
 "#,
-        "u:r:magisk:s0", tmp_dir
+        con, tmp_dir
     )
     .ok();
 

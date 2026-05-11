@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use base::const_format::concatcp;
+use std::sync::OnceLock;
 
 #[path = "../../out/generated/flags.rs"]
 mod flags;
@@ -36,6 +37,26 @@ pub const LOG_PIPE: &str = concatcp!(DEVICEDIR, "/log");
 pub const ROOTOVL: &str = concatcp!(INTERNAL_DIR, "/rootdir");
 pub const ROOTMNT: &str = concatcp!(ROOTOVL, "/.mount_list");
 pub const SELINUXMOCK: &str = concatcp!(INTERNAL_DIR, "/selinux");
+
+// Runtime randomized domain storage
+const DOMAIN_FILE: &str = "/data/.backup/.domain";
+static RANDOM_DOMAIN: OnceLock<String> = OnceLock::new();
+
+pub fn get_sepol_proc_domain() -> &'static str {
+    RANDOM_DOMAIN.get_or_init(|| {
+        std::fs::read_to_string(DOMAIN_FILE)
+            .map(|s| s.trim().to_string())
+            .unwrap_or_else(|_| "magisk".to_string())
+    })
+}
+
+pub fn set_sepol_proc_domain(name: &str) {
+    let _ = RANDOM_DOMAIN.set(name.to_string());
+}
+
+pub fn magisk_proc_con() -> String {
+    format!("u:r:{}:s0", get_sepol_proc_domain())
+}
 
 // Unconstrained domain the daemon and root processes run in
 pub const SEPOL_PROC_DOMAIN: &str = "magisk";

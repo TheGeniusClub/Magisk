@@ -84,6 +84,9 @@ object Info {
         val isActive = versionCode > 0
     }
 
+    var sepolDomain = ""
+        private set
+
     fun init(shell: Shell) {
         if (shell.isRoot) {
             val v = fastCmd(shell, "magisk -v").split(":")
@@ -121,5 +124,7 @@ object Info {
         Config.recovery = getBool("RECOVERYMODE")
         Config.keepVerity = getBool("KEEPVERITY")
         Config.keepEnc = getBool("KEEPFORCEENCRYPT")
+
+        sepolDomain = runCatching { fastCmd(shell, "cat /data/.backup/.domain") }.getOrDefault("")
     }
 }
