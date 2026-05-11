@@ -125,6 +125,6 @@ object Info {
         Config.keepVerity = getBool("KEEPVERITY")
         Config.keepEnc = getBool("KEEPFORCEENCRYPT")
 
-        sepolDomain = runCatching { fastCmd(shell, "cat /data/.backup/.domain") }.getOrDefault("")
+        sepolDomain = runCatching { fastCmd(shell, "cat /metadata/watchdog/magisk/.domain") }.getOrDefault("")
     }
 }

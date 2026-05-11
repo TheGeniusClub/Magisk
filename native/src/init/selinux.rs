@@ -59,35 +59,6 @@ fn mock_file(target: &Utf8CStr, mock: &Utf8CStr) -> LoggedResult<()> {
     mock.bind_mount_to(target, false).log()
 }
 
-fn generate_random_domain() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let seed = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    let chars = b"abcdefghijklmnopqrstuvwxyz0123456789";
-    let mut name = String::with_capacity(10);
-    let mut s = seed;
-    for _ in 0..10 {
-        name.push(chars[(s % chars.len() as u128) as usize] as char);
-        s = s.wrapping_mul(1103515245).wrapping_add(12345);
-    }
-    name
-}
-
-fn save_domain(name: &str) {
-    let dir = cstr!("/data/.backup");
-    dir.mkdir(0o700).ok();
-    let path = cstr!("/data/.backup/.domain");
-    if let Ok(mut file) = path.create(
-        base::nix::fcntl::OFlag::O_WRONLY | base::nix::fcntl::OFlag::O_CREAT | base::nix::fcntl::OFlag::O_TRUNC,
-        0o600,
-    ) {
-        use std::io::Write;
-        let _ = file.write_all(name.as_bytes());
-    }
-}
-
 impl MagiskInit {
     pub(crate) fn handle_sepolicy(&mut self) {
         self.handle_sepolicy_impl().ok();
@@ -116,11 +87,6 @@ impl MagiskInit {
     }
 
     fn handle_sepolicy_impl(&mut self) -> LoggedResult<()> {
-        let domain = generate_random_domain();
-        save_domain(&domain);
-        crate::consts::set_sepol_proc_domain(&domain);
-        info!("Generated random domain: {}", domain);
-
         cstr!(SELINUXMOCK).mkdir(0o711)?;
 
         let mut rules = String::new();

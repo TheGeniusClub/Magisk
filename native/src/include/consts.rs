@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 use base::const_format::concatcp;
-use std::sync::OnceLock;
 
 #[path = "../../out/generated/flags.rs"]
 mod flags;
@@ -39,19 +38,48 @@ pub const ROOTMNT: &str = concatcp!(ROOTOVL, "/.mount_list");
 pub const SELINUXMOCK: &str = concatcp!(INTERNAL_DIR, "/selinux");
 
 // Runtime randomized domain storage
-const DOMAIN_FILE: &str = "/data/.backup/.domain";
-static RANDOM_DOMAIN: OnceLock<String> = OnceLock::new();
+const DOMAIN_FILE: &str = "/metadata/watchdog/magisk/.domain";
 
-pub fn get_sepol_proc_domain() -> &'static str {
-    RANDOM_DOMAIN.get_or_init(|| {
-        std::fs::read_to_string(DOMAIN_FILE)
-            .map(|s| s.trim().to_string())
-            .unwrap_or_else(|_| "magisk".to_string())
-    })
+pub fn generate_and_save_domain() {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    
+    if std::path::Path::new(DOMAIN_FILE).exists() {
+        return;
+    }
+    
+    let seed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let chars = b"abcdefghijklmnopqrstuvwxyz0123456789";
+    let mut name = String::with_capacity(10);
+    let mut s = seed;
+    for _ in 0..10 {
+        name.push(chars[(s % chars.len() as u128) as usize] as char);
+        s = s.wrapping_mul(1103515245).wrapping_add(12345);
+    }
+    
+    // Save to /metadata (preinit dir, survives reboots and is available in early boot)
+    let dir = std::path::Path::new("/metadata/watchdog/magisk");
+    if let Err(e) = std::fs::create_dir_all(dir) {
+        eprintln!("generate_and_save_domain: create_dir_all failed: {}", e);
+        return;
+    }
+    if let Err(e) = std::fs::write(DOMAIN_FILE, name.as_bytes()) {
+        eprintln!("generate_and_save_domain: write failed: {}", e);
+    } else {
+        eprintln!("generate_and_save_domain: generated domain {}", name);
+    }
 }
 
-pub fn set_sepol_proc_domain(name: &str) {
-    let _ = RANDOM_DOMAIN.set(name.to_string());
+pub fn get_sepol_proc_domain() -> &'static str {
+    if let Ok(name) = std::fs::read_to_string(DOMAIN_FILE) {
+        let trimmed = name.trim();
+        if !trimmed.is_empty() {
+            return Box::leak(trimmed.to_string().into_boxed_str());
+        }
+    }
+    Box::leak("magisk".to_string().into_boxed_str())
 }
 
 pub fn magisk_proc_con() -> String {

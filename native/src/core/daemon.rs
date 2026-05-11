@@ -304,7 +304,8 @@ fn daemon_entry() {
         cstr!("/proc/self/attr/current").open(OFlag::O_WRONLY | OFlag::O_CLOEXEC)
     {
         let con = get_sepol_proc_domain();
-        let ctx = format!("u:r:{}:s0", con);
+        let mut ctx = format!("u:r:{}:s0", con);
+        ctx.push('\0');
         current.write_all(ctx.as_bytes()).log_ok();
     }
 

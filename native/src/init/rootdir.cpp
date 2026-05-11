@@ -16,7 +16,7 @@ static vector<string> rc_list;
 #define INIT_RC         "init.rc"
 
 static void read_domain(char *buf, int len) {
-    int fd = open("/data/.backup/.domain", O_RDONLY);
+    int fd = open("/metadata/watchdog/magisk/.domain", O_RDONLY);
     if (fd < 0) {
         buf[0] = 'm'; buf[1] = 'a'; buf[2] = 'g'; buf[3] = 'i';
         buf[4] = 's'; buf[5] = 'k'; buf[6] = '\0';

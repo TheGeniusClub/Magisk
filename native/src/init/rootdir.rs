@@ -15,8 +15,7 @@ pub fn inject_magisk_rc(fd: RawFd, tmp_dir: &Utf8CStr) {
 
     let mut file = unsafe { File::from_raw_fd(fd) };
 
-    let domain = get_sepol_proc_domain();
-    let con = format!("u:r:{}:s0", domain);
+    let con = format!("u:r:{}:s0", get_sepol_proc_domain());
     write!(
         file,
         r#"
